@@ -1,2 +1,2 @@
 [tool.vercel]
-entrypoint = "api.live-board:handler"
+entrypoint = "api.live_board:handler"
