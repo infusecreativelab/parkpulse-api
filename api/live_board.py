@@ -23,7 +23,7 @@ import urllib.request
 
 import requests
 from icalendar import Calendar
-from google.transit import gtfs_realtime_pb2
+from nyct_gtfs.compiled_gtfs import gtfs_realtime_pb2 
 from nyct_gtfs import NYCTFeed
 
 
