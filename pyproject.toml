@@ -1,2 +1,13 @@
+[project]
+name = "parkpulse-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "icalendar",
+    "nyct-gtfs",
+    "gtfs-realtime-bindings",
+    "requests",
+]
+
 [tool.vercel]
 entrypoint = "api.live_board:handler"
