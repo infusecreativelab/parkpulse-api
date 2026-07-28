@@ -221,7 +221,7 @@ def _fetch_ferry_feed(url: str) -> gtfs_realtime_pb2.FeedMessage:
     feed.ParseFromString(response.content)
     return feed
   
- STATIC_GTFS_URL = "http://nycferry.connexionz.net/rtt/public/resource/gtfs.zip"
+STATIC_GTFS_URL = "http://nycferry.connexionz.net/rtt/public/resource/gtfs.zip"
 _ferry_trip_route_cache: dict = {}
 _ferry_trip_route_cache_time: float = 0
 FERRY_CACHE_TTL_SECONDS = 3600
