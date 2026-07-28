@@ -22,6 +22,9 @@ from urllib.parse import urlparse, parse_qs
 import urllib.request
 
 import requests
+import zipfile
+import io
+import csv
 from icalendar import Calendar
 from nyct_gtfs.compiled_gtfs import gtfs_realtime_pb2 
 from nyct_gtfs import NYCTFeed
@@ -217,7 +220,28 @@ def _fetch_ferry_feed(url: str) -> gtfs_realtime_pb2.FeedMessage:
     feed = gtfs_realtime_pb2.FeedMessage()
     feed.ParseFromString(response.content)
     return feed
+  
+ STATIC_GTFS_URL = "http://nycferry.connexionz.net/rtt/public/resource/gtfs.zip"
+_ferry_trip_route_cache: dict = {}
+_ferry_trip_route_cache_time: float = 0
+FERRY_CACHE_TTL_SECONDS = 3600
 
+def _get_ferry_trip_route_map() -> dict:
+    global _ferry_trip_route_cache, _ferry_trip_route_cache_time
+    now = datetime.now().timestamp()
+    if _ferry_trip_route_cache and (now - _ferry_trip_route_cache_time) < FERRY_CACHE_TTL_SECONDS:
+        return _ferry_trip_route_cache
+    response = requests.get(STATIC_GTFS_URL, timeout=15)
+    response.raise_for_status()
+    zf = zipfile.ZipFile(io.BytesIO(response.content))
+    trip_map = {}
+    with zf.open("trips.txt") as f:
+        reader = csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig"))
+        for row in reader:
+            trip_map[row["trip_id"]] = row["route_id"]
+    _ferry_trip_route_cache = trip_map
+    _ferry_trip_route_cache_time = now
+    return trip_map
 
 def _get_ferry_alerts(route_id=None):
     alerts = []
@@ -250,7 +274,7 @@ def _get_ferry_trip_updates(route_id=None):
         if not entity.HasField("trip_update"):
             continue
         trip_update = entity.trip_update
-        trip_route_id = trip_update.trip.route_id
+        trip_route_id = trip_update.trip.route_id or _get_ferry_trip_route_map().get(trip_update.trip.trip_id, "")
         if route_id and trip_route_id != route_id:
             continue
         stops = []
